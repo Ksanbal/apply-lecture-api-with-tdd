@@ -9,13 +9,21 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = "postgresql://postgres:qwer1234!@localhost:5432/lectures"
+}
+
+// 강의
+model lecture {
+  id       Int    @id @default(autoincrement())
+  name     String
+  maxSeat  Int    @default(30) @map("max_seat")
+  leftSeat Int    @default(30) @map("left_seat")
 }
 
 // 강의 신청
 model application {
-  id         Int      @id @default(autoincrement())
-  created_at DateTime @default(now())
-  userId     Int      @map("user_id")
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    Int      @map("user_id")
 }

@@ -18,43 +18,46 @@ export class LecturesController {
   async apply(@Body() applyDto) {
     const { userId } = applyDto;
 
-    const [application, count, newApplication] = await this.prisma.$transaction(
-      [
-        this.prisma.application.findFirst({
-          where: {
-            userId,
-          },
-        }),
-        this.prisma.application.count(),
-        this.prisma.application.create({
+    return this.prisma.$transaction(
+      async (tx) => {
+        await tx.application.create({
           data: {
             userId,
           },
-        }),
-      ],
+        });
+
+        const count = await tx.application.count({
+          where: {
+            userId,
+          },
+        });
+
+        if (1 < count) {
+          throw new BadRequestException('이미 신청한 특강입니다');
+        }
+
+        const lecture = await tx.lecture.update({
+          data: {
+            leftSeat: {
+              decrement: 1,
+            },
+          },
+          where: {
+            id: 1,
+          },
+        });
+
+        if (lecture.leftSeat < 0) {
+          throw new BadRequestException('특강이 마감되었습니다 🙏');
+        }
+
+        return lecture;
+      },
+      {
+        maxWait: 10000,
+        timeout: 20000,
+      },
     );
-
-    if (application) {
-      // 롤백
-      await this.prisma.application.delete({
-        where: {
-          id: newApplication.id,
-        },
-      });
-      throw new BadRequestException('이미 신청한 특강입니다');
-    }
-
-    if (30 <= count) {
-      // 롤백
-      await this.prisma.application.delete({
-        where: {
-          id: newApplication.id,
-        },
-      });
-      throw new BadRequestException('특강이 마감되었습니다 🙏');
-    }
-
-    return newApplication;
   }
 
   @Get('application/:userId')

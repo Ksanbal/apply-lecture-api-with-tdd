@@ -15,10 +15,28 @@ describe('LecturesController', () => {
 
     controller = module.get<LecturesController>(LecturesController);
     prisma = module.get<PrismaService>(PrismaService);
+
+    /**
+     * 테스트 DB 세팅
+     */
+    // 강의 생성
+    await prisma.lecture.deleteMany();
+    await prisma.lecture.create({
+      data: {
+        id: 1,
+        name: '카리나의 춤 특강',
+        maxSeat: 30,
+        leftSeat: 30,
+      },
+    });
+
+    /// 신청 테이블 clear
+    await prisma.application.deleteMany();
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(prisma).toBeDefined();
   });
 
   /**
@@ -33,7 +51,6 @@ describe('LecturesController', () => {
       const data = {
         userId,
       };
-      await prisma.application.deleteMany();
       await controller.apply(data);
       // When
       const result = controller.apply(data);
@@ -41,20 +58,21 @@ describe('LecturesController', () => {
       expect(result).rejects.toThrow(BadRequestException);
     });
 
-    it('50명이 신청하면 30명은 성공, 20명은 실패해야합니다.', async () => {
+    it('100명이 신청하면 30명은 성공, 나머지는 실패해야합니다.', async () => {
       // Given
-      const total = 50;
+      const total = 100;
       const expectedSuccess = 30;
       const expectedFail = total - expectedSuccess;
       const datas = Array.from({ length: total }, (_, i) => i + 1);
-      await prisma.application.deleteMany();
       const promises = datas.map((userId) =>
         controller.apply({
           userId,
         }),
       );
+
       // When
       const results = await Promise.allSettled(promises);
+
       // Then
       const successResults = results.filter(
         (result) => result.status === 'fulfilled',
@@ -75,7 +93,6 @@ describe('LecturesController', () => {
     it('특정 유저가 명단에 없으면 404 에러를 발생합니다.', async () => {
       // Given
       const userId = 100;
-      await prisma.application.deleteMany();
       // When
       const result = controller.applicationResult(userId);
       // Then
