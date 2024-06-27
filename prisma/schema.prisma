@@ -13,17 +13,33 @@ datasource db {
   url      = "postgresql://postgres:qwer1234!@localhost:5432/lectures"
 }
 
-// 강의
-model lecture {
-  id       Int    @id @default(autoincrement())
-  name     String
-  maxSeat  Int    @default(30) @map("max_seat")
-  leftSeat Int    @default(30) @map("left_seat")
+model Lecture {
+  id              Int      @id @default(autoincrement())
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  date            DateTime
+  maxSeat         Int      @map("max_seat")
+  leftSeat        Int      @map("left_seat")
+  lectureDetailId Int      @map("lecture_detail_id")
+
+  @@map("lecture")
 }
 
-// 강의 신청
-model application {
+model LectureDetail {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  name      String
+
+  @@map("lecture_detail")
+}
+
+model Application {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  lectureId Int      @map("lecture_id")
   userId    Int      @map("user_id")
+
+  @@map("application")
 }
